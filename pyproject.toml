@@ -1,0 +1,9 @@
+[project]
+name = "credit-strategy-agent"
+version = "0.1.0"
+description = "Personal prototype: an agent that designs credit swap-in/swap-out tests inside a locked risk appetite."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

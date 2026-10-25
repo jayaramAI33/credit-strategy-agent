@@ -1,0 +1,42 @@
+# Risk appetite: set by risk, READ-ONLY for the agent. Values are illustrative.
+# Loaded through csa.config (frozen in memory). No tool or code path writes this file.
+
+owner: "Chief Risk Officer (illustrative)"
+version: "v1 2026-10-22"
+
+limits:
+  portfolio_bad_rate_delta_pp:          # new approved bad rate minus current-policy approved bad rate
+    max: 0.20
+    note: "Main control. Swap-ins may be riskier than the average approval; swap-outs pay for them."
+  net_approval_growth_pct:              # (new approvals / current approvals - 1) x 100
+    max: 20
+    note: "Volume ceiling (set 2026-10-22). Rate limits alone understate absolute loss growth."
+  swap_in_segment_bad_rate:
+    max: marginal_approved_bad_rate     # computed, see definitions
+    note: "No swap-in may be riskier than the riskiest current approvals."
+  stressed_portfolio_bad_rate_delta_pp: # reject-inference stress test
+    max: 0.20
+    swap_in_shock_pp: 2.0
+    note: "Delta bad rate must stay within the limit even if every swap-in is 2 pp worse than measured. Penalises high turnover."
+  swap_in_concentration_pct:            # share of all swapped-in loans
+    max: 75
+    basis: policy_group                 # by decline reason ("pocket"); overlapping segments in one pocket are one bet. Set 2026-10-22
+  segment_min_volume_pct:               # each segment's share of applications
+    min: 1.0
+  test_cell_share_pct:                  # test cell size as a share of each swap segment
+    max: 5
+
+definitions:
+  marginal_approved_bad_rate:
+    riskiest_share_of_approvals_pct: 10
+    method: "Rank current approvals by their policy cell's build bad rate; take the riskiest 10% by volume."
+
+escalation:
+  near_limit_pct: 10          # within 10% of any limit -> escalate
+  bands:
+    green: {route: "credit_manager", meaning: "Within all limits"}
+    amber: {route: "senior_risk", meaning: "Within 10% of a limit, or passes only on the point estimate"}
+    red:   {route: "refuse", meaning: "Breaches a limit"}
+  confidence_level: 0.95      # bootstrap interval on every delta
+  bootstrap_samples: 200
+  bootstrap_seed: 7

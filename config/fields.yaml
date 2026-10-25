@@ -1,0 +1,187 @@
+# Field register: every column of the raw Lending Club file has exactly one role.
+# tests/test_fields.py fails if a column is missing here or listed twice.
+
+roles:
+  primary_key: id
+  dependent_source: loan_status      # -> bad flag (settings.yaml)
+  vintage_source: issue_d            # -> issue quarter
+  segment_id: term                   # portfolio split; v1 keeps 36-month only
+  policy_axis: grade                 # used ONLY by the current policy, never a screened input
+  formula_variable: null             # deferred by the user
+
+# Application-time fields: the only fields allowed into screening.
+candidates:
+  numeric:
+    - loan_amnt
+    - annual_inc
+    - dti
+    - delinq_2yrs
+    - fico_range_low
+    - fico_range_high
+    - inq_last_6mths
+    - mths_since_last_delinq
+    - mths_since_last_record
+    - open_acc
+    - pub_rec
+    - revol_bal
+    - revol_util
+    - total_acc
+    - collections_12_mths_ex_med
+    - mths_since_last_major_derog
+    - annual_inc_joint
+    - dti_joint
+    - acc_now_delinq
+    - tot_coll_amt
+    - tot_cur_bal
+    - open_acc_6m
+    - open_act_il
+    - open_il_12m
+    - open_il_24m
+    - mths_since_rcnt_il
+    - total_bal_il
+    - il_util
+    - open_rv_12m
+    - open_rv_24m
+    - max_bal_bc
+    - all_util
+    - total_rev_hi_lim
+    - inq_fi
+    - total_cu_tl
+    - inq_last_12m
+    - acc_open_past_24mths
+    - avg_cur_bal
+    - bc_open_to_buy
+    - bc_util
+    - chargeoff_within_12_mths
+    - delinq_amnt
+    - mo_sin_old_il_acct
+    - mo_sin_old_rev_tl_op
+    - mo_sin_rcnt_rev_tl_op
+    - mo_sin_rcnt_tl
+    - mort_acc
+    - mths_since_recent_bc
+    - mths_since_recent_bc_dlq
+    - mths_since_recent_inq
+    - mths_since_recent_revol_delinq
+    - num_accts_ever_120_pd
+    - num_actv_bc_tl
+    - num_actv_rev_tl
+    - num_bc_sats
+    - num_bc_tl
+    - num_il_tl
+    - num_op_rev_tl
+    - num_rev_accts
+    - num_rev_tl_bal_gt_0
+    - num_sats
+    - num_tl_120dpd_2m
+    - num_tl_30dpd
+    - num_tl_90g_dpd_24m
+    - num_tl_op_past_12m
+    - pct_tl_nvr_dlq
+    - percent_bc_gt_75
+    - pub_rec_bankruptcies
+    - tax_liens
+    - tot_hi_cred_lim
+    - total_bal_ex_mort
+    - total_bc_limit
+    - total_il_high_credit_limit
+    - revol_bal_joint
+    - sec_app_fico_range_low
+    - sec_app_fico_range_high
+    - sec_app_inq_last_6mths
+    - sec_app_mort_acc
+    - sec_app_open_acc
+    - sec_app_revol_util
+    - sec_app_open_act_il
+    - sec_app_num_rev_accts
+    - sec_app_chargeoff_within_12_mths
+    - sec_app_collections_12_mths_ex_med
+    - sec_app_mths_since_last_major_derog
+  categorical:
+    - emp_length
+    - home_ownership
+    - verification_status
+    - purpose
+    - application_type
+    - verification_status_joint
+  date:
+    - earliest_cr_line
+    - sec_app_earliest_cr_line
+
+# Blocked: never allowed into screening, features, segments or policy.
+blocked:
+  post_origination:        # known only after the loan was issued -> leakage
+    - funded_amnt
+    - funded_amnt_inv
+    - pymnt_plan
+    - out_prncp
+    - out_prncp_inv
+    - total_pymnt
+    - total_pymnt_inv
+    - total_rec_prncp
+    - total_rec_int
+    - total_rec_late_fee
+    - recoveries
+    - collection_recovery_fee
+    - last_pymnt_d
+    - last_pymnt_amnt
+    - next_pymnt_d
+    - last_credit_pull_d
+    - last_fico_range_high
+    - last_fico_range_low
+    - hardship_flag
+    - hardship_type
+    - hardship_reason
+    - hardship_status
+    - deferral_term
+    - hardship_amount
+    - hardship_start_date
+    - hardship_end_date
+    - payment_plan_start_date
+    - hardship_length
+    - hardship_dpd
+    - hardship_loan_status
+    - orig_projected_additional_accrued_interest
+    - hardship_payoff_balance_amount
+    - hardship_last_payment_amount
+    - debt_settlement_flag
+    - debt_settlement_flag_date
+    - settlement_status
+    - settlement_date
+    - settlement_amount
+    - settlement_percentage
+    - settlement_term
+  lender_pricing_risk:     # Lending Club's own model and pricing
+    - int_rate
+    - installment
+    - sub_grade
+  proxy:                   # geographic proxies
+    - zip_code
+    - addr_state
+  free_text_id:
+    - member_id
+    - url
+    - desc
+    - title
+    - emp_title
+  lender_operational:      # Lending Club process fields, not applicant information
+    - initial_list_status
+    - disbursement_method
+    - policy_code
+
+# Derived features (created after screening). A derived feature may use a
+# screened-out source only if listed under allowed_rejected_sources, with a reason.
+derived:
+  fico_mid:
+    from: [fico_range_low, fico_range_high]
+    replaces: [fico_range_low, fico_range_high]
+  loan_to_income:
+    from: [loan_amnt, annual_inc]
+  credit_age_months:
+    from: [earliest_cr_line, issue_d]
+  # ever_delinquent (from mths_since_last_delinq) was tried in phase 1 and dropped:
+  # IV 0.000 on build, 0.003 on OOT.
+
+# Variables the current policy already uses. Excluded from the top-N segment
+# features, because segments are current-policy cells crossed with OTHER features.
+policy_variables: [fico_mid, dti, loan_to_income]

@@ -1,0 +1,88 @@
+current_policy:
+  name: Current policy v0 (illustrative, built for this prototype)
+  knockouts:
+  - field: dti
+    op: '>'
+    value: 35
+  - field: loan_to_income
+    op: '>'
+    value: 0.4
+  grade_rules:
+    A: approve
+    B: approve
+    C:
+      min_fico: 677
+    D:
+      min_fico: 697
+    E: decline
+    F: decline
+    G: decline
+test_cells:
+- run: 20261022-223605_grow-approvals-3-5-without-raising-the-b
+  approved_by: jayaram
+  role: credit_manager
+  approved_at: '2026-10-22T17:29:36+00:00'
+  band: green
+  status: enabled (test cells only)
+  note: agent demo
+  cells:
+  - cell_id: TC-IN-04
+    conditions_all:
+    - - dti
+      - <=
+      - 35
+    - - loan_to_income
+      - <=
+      - 0.4
+    - - grade
+      - ==
+      - C
+    - - fico_mid
+      - <
+      - 677
+    - - acc_open_past_24mths
+      - <=
+      - 2.0
+    action: approve
+    allocation:
+      method: random
+      share_pct: 5
+    stop_rule: 'Pause the cell if its observed bad rate exceeds 20.13% (the swap-in
+      limit: marginal approved bad rate)'
+  - cell_id: TC-IN-05
+    conditions_all:
+    - - dti
+      - <=
+      - 35
+    - - loan_to_income
+      - '>'
+      - 0.4
+    - - acc_open_past_24mths
+      - <=
+      - 3.0
+    action: approve
+    allocation:
+      method: random
+      share_pct: 5
+    stop_rule: 'Pause the cell if its observed bad rate exceeds 20.13% (the swap-in
+      limit: marginal approved bad rate)'
+  - cell_id: TC-OUT-11
+    conditions_all:
+    - - dti
+      - <=
+      - 35
+    - - loan_to_income
+      - <=
+      - 0.4
+    - - grade
+      - ==
+      - D
+    - - fico_mid
+      - '>='
+      - 697
+    action: decline
+    allocation:
+      method: random
+      share_pct: 5
+    stop_rule: Stop if declined volume differs from the expected count by more than
+      20%

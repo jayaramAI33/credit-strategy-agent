@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Strategy Agent replay</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#5b6370;--line:#dfe3e8;--agent:#4b3fd1;--code:#0f766e;
+--rej:#b42318;--human:#9a3412;--green:#15803d;--amber:#b45309;--red:#b42318;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#14171c}
+body{display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden}
+#stage{position:relative;width:960px;height:540px;background:var(--bg);color:var(--ink);overflow:hidden;flex:none}
+header{position:absolute;left:0;right:0;top:0;height:42px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header .t{font-size:15px;font-weight:700}header .sub{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:640px}
+.ctrl button{font:600 11px "Segoe UI",sans-serif;border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;margin-left:4px;cursor:pointer}
+main{position:absolute;left:14px;right:14px;top:52px;bottom:76px;display:grid;grid-template-columns:1.12fr 1fr;gap:14px}
+#feed{display:flex;flex-direction:column;gap:9px;height:100%;overflow:hidden;justify-content:flex-end}
+.card{flex:none;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--mute);border-radius:9px;padding:9px 12px;opacity:0;transform:translateY(8px);transition:all .6s}
+.card.show{opacity:1;transform:none}
+.card .lab{font-size:11.5px;font-weight:800;letter-spacing:.06em}
+.card .ttl{font-size:18px;font-weight:700;margin:1px 0 2px;line-height:1.25}
+.card .ln{font-size:17px;line-height:1.35;color:#23282f}
+.k-agent{border-left-color:var(--agent)}.k-agent .lab{color:var(--agent)}
+.k-code{border-left-color:var(--code)}.k-code .lab{color:var(--code)}
+.k-rejected{border-left-color:var(--rej);background:#fff6f5}.k-rejected .lab{color:var(--rej)}
+.k-stop,.k-refuse{border-left-color:var(--ink);background:#fbfbf6}.k-stop .lab,.k-refuse .lab{color:var(--ink)}
+.k-human{border-left-color:var(--human);background:#fff8f1}.k-human .lab{color:var(--human)}
+.band{display:inline-block;padding:1px 8px;border-radius:99px;color:#fff;font-size:11px;font-weight:800;margin-left:7px}
+.b-green{background:var(--green)}.b-amber{background:var(--amber)}.b-red{background:var(--red)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;height:100%;display:flex;flex-direction:column}
+.panel .h{font-size:14px;font-weight:700}.panel .note{font-size:11.5px;color:var(--mute);line-height:1.3}
+#svg{flex:1;min-height:0}#svg svg{width:100%;height:100%}
+#screen{position:absolute;left:14px;right:14px;top:52px;bottom:76px;display:none;align-items:center;justify-content:center;background:var(--bg)}
+#screen.on{display:flex}
+#screen .box{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 30px;opacity:0;transition:opacity .8s}
+#screen .box.show{opacity:1}
+#screen .lab{font-size:12.5px;font-weight:800;letter-spacing:.08em;color:#0f766e}
+#screen h2{font-size:28px;line-height:1.2;margin:6px 0 10px}
+#screen ul{margin:0;padding-left:22px;font-size:17.5px;line-height:1.42;color:#23282f}
+#screen .note{margin-top:10px;font-size:12.5px;color:var(--mute)}
+#cap{position:absolute;left:0;right:0;bottom:0;height:66px;background:#14171c;color:#fff;padding:10px 18px}
+#cap .c{font-size:20px;font-weight:700;line-height:1.25}#cap small{display:block;font-size:11.5px;color:#c9ced6;margin-top:3px}
+</style></head><body>
+<div id="stage">
+<header><div><div class="t">Credit Strategy Agent — run replay</div><div class="sub" id="sub"></div></div>
+<div class="ctrl"><button id="play">Pause</button><button id="next">Next ▶</button><button id="restart">Restart</button></div></header>
+<div id="screen"><div class="box"><div class="lab" id="slab"></div><h2 id="stitle"></h2><ul id="slist"></ul><div class="note" id="snote"></div></div></div>
+<main><section id="feed"></section>
+<div class="panel"><div class="h">Plans tested (2015 data, change vs current policy)</div><div id="svg"></div>
+<div class="note">● measured · ○ stress test (swap-ins 2 pp worse) · dashed: +0.2 pp limit · x: bad-rate change (pp) · y: approvals change (%)</div></div></main>
+<div id="cap"></div>
+</div>
+<script>
+const DATA = {"steps": [{"kind": "screen", "screen": "goal", "label": "THE BUSINESS GOAL", "title": "“Grow approvals 3-5% without raising the bad rate”", "lines": [], "note": "Personal prototype · public Lending Club data, 2012Q4–2015 · no employer data", "caption": "A business goal arrives in plain English.", "act": "act1", "ms": 6000}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["I'll start by reading the risk appetite and the current-policy baseline."], "act": "act1", "ms": 5250}, {"kind": "screen", "screen": "appetite", "label": "R1 · THE RISK APPETITE · READ-ONLY, SET BY RISK", "title": "Limits the agent cannot change", "lines": ["Portfolio bad rate may rise by at most 0.2 pp", "… still at most 0.2 pp if every swap-in performs 2.0 pp worse", "Swap-ins no riskier than the riskiest customers approved today", "No pocket (decline reason) above 75% of swapped-in loans", "Each segment at least 1.0% of applications", "Net approval growth at most +20%", "Test cells at most 5% of a segment", "Green → credit manager · Amber → senior risk · Red → refused"], "caption": "The agent reads the risk appetite. It is locked: no tool can change it.", "act": "act1", "ms": 15000}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["My target is net approvals up 3-5% with no increase in bad rate, so I'll select strong swap-ins well below the marginal bad rate alongside swap-outs to offset risk, then simulate and iterate until all limits pass. Next I'll pull the swap-in and swap-out candidate lists to assess available volume and risk."], "act": "act1", "ms": 15500}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["Next I'll test a lean first set: IN-04 and IN-07 (the two lowest-risk swap-ins, from separate pockets) plus OUT-07 and OUT-11 (the two riskiest swap-outs)."], "act": "act1", "ms": 8750}, {"kind": "code", "label": "CODE CALCULATED", "title": "R5 · Plan tested", "lines": ["In: IN-04, IN-07  ·  Out: OUT-07, OUT-11", "Approvals -1.00%  ·  bad rate -0.557 pp (95% range -0.605 to -0.504)", "Stress test -0.453 pp"], "tool": "simulate_swap_set", "band": "green", "caption": "Code tests each plan against every limit. The agent reads the result and decides.", "point": {"id": "R5", "x": -0.557, "xs": -0.453, "y": -1.0, "band": "green"}, "act": "act1", "ms": 9250}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["R5 passes the risk check but falls short on approvals, down 1.0%. Next I'll test combining IN-01 and IN-07 with only OUT-11 as the swap-out, aiming for 3-5% net growth while keeping the bad-rate delta at zero or better."], "act": "act1", "ms": 12250}, {"kind": "code", "label": "CODE CALCULATED", "title": "R6 · Plan tested", "lines": ["In: IN-01, IN-07  ·  Out: OUT-11", "Approvals +4.28%  ·  bad rate -0.032 pp (95% range -0.077 to +0.017)", "Stress test +0.102 pp"], "tool": "simulate_swap_set", "band": "green", "caption": "Code tests each plan against every limit. The agent reads the result and decides.", "point": {"id": "R6", "x": -0.032, "xs": 0.102, "y": 4.28, "band": "green"}, "act": "act1", "ms": 9000}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["R6 meets the goal on its point estimate (4.28% approval growth, -0.032pp bad rate change), but its confidence interval (-0.077 to 0.017pp) doesn't fully rule out a rise. Next I'll test a lower-risk combo—IN-04 and IN-05 with OUT-11—to see if it achieves a whole-interval-below-zero result while still hitting 3%+ growth."], "act": "act1", "ms": 15000}, {"kind": "code", "label": "CODE CALCULATED", "title": "R7 · Plan tested", "lines": ["In: IN-04, IN-05  ·  Out: OUT-11", "Approvals +3.38%  ·  bad rate -0.075 pp (95% range -0.118 to -0.034)", "Stress test +0.042 pp"], "tool": "simulate_swap_set", "band": "green", "caption": "Code tests each plan against every limit. The agent reads the result and decides.", "point": {"id": "R7", "x": -0.075, "xs": 0.042, "y": 3.38, "band": "green"}, "act": "act1", "ms": 9000}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["I'm selecting R7 — it boosts approvals 3.38% and reliably lowers the bad rate (-0.075pp, 95% CI entirely below zero). Now drafting the randomised test-cell proposal based on R7."], "act": "act1", "ms": 9750}, {"kind": "code", "label": "CODE CALCULATED", "title": "R8 · Test proposal drafted", "lines": ["3 randomised test cells, each 5% of its segment", "Stop rule: pause a cell if its bad rate passes the swap-in limit"], "tool": "draft_test_proposal", "caption": "It proposes a small randomised test, not a rollout.", "band": "green", "act": "act1", "ms": 9250}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["Last step: submit the R8 proposal for credit-manager approval."], "act": "act1", "ms": 4750}, {"kind": "rejected", "label": "CHECK REJECTED", "title": "submit_for_approval refused", "lines": ["Recommendation contains figures not found in the results cited in the same sentence: ['20.13 (uncited)']. Copy each figure exactly from a tool result and cite it, like [R5]."], "caption": "A check rejects any figure it cannot trace to a tool result. The agent fixes it.", "act": "act1", "ms": 10000}, {"kind": "stop", "label": "STOPPED", "title": "Pending human approval", "band": "green", "lines": ["Approvals +3.38%  ·  bad rate -0.075 pp  ·  needs credit manager", "Note to the committee: Test, not rollout: approve two currently declined segments, IN-04 (grade C, FICO below 677, few recent accounts) and IN-05 (loan-to-income knockout, few recent accounts), and decline one currently approved segment, OUT-11 (grade D, FICO 697+), each in a 5% randomised …"], "caption": "Then it stops. A person must approve.", "act": "act1", "ms": 16000}, {"kind": "human", "label": "HUMAN", "title": "APPROVED by jayaram (credit manager)", "lines": ["Test cells enabled. Current policy unchanged."], "caption": "A person decides. Only test cells change; the current policy does not.", "act": "act1", "ms": 9000}, {"kind": "screen", "screen": "goal", "label": "THE BUSINESS GOAL", "title": "“Grow approvals 15%”", "lines": [], "note": "Personal prototype · public Lending Club data, 2012Q4–2015 · no employer data", "caption": "Now a bigger ask, from the same agent under the same appetite.", "act": "act2", "ms": 6000}, {"kind": "agent", "label": "AGENT DECIDED", "title": "", "lines": ["I've interpreted the growth target as needing ~15% approval growth within the 20% volume ceiling, 0.2pp bad rate tolerance, and swap-ins capped at 20.13% bad rate. Now I'll pull swap-in/swap-out candidates to assess available volume and risk before simulating and refining the test cell."], "act": "act2", "ms": 13500}, {"kind": "code", "label": "CODE CALCULATED", "title": "R5–R11 · 7 plans tested (condensed)", "lines": ["Widest: R6, +13.89% approvals at +0.808 pp bad rate (red)", "Best inside the appetite: R11, +3.76% approvals, -0.152 pp (amber)", "Condensed for this replay; every step is in the audit log."], "points": [{"id": "R5", "x": 0.761, "xs": 0.996, "y": 13.29, "band": "red"}, {"id": "R6", "x": 0.808, "xs": 1.052, "y": 13.89, "band": "red"}, {"id": "R7", "x": -0.378, "xs": -0.223, "y": 1.73, "band": "green"}, {"id": "R8", "x": 0.102, "xs": 0.269, "y": 6.17, "band": "red"}, {"id": "R9", "x": -0.296, "xs": -0.123, "y": 2.7, "band": "green"}, {"id": "R10", "x": -0.184, "xs": -0.013, "y": 3.49, "band": "green"}, {"id": "R11", "x": -0.152, "xs": 0.023, "y": 3.76, "band": "amber"}], "caption": "It tests 7 plans. None reaches the goal inside the appetite.", "act": "act2", "ms": 11750}, {"kind": "refuse", "label": "REFUSED", "title": "Goal declined", "band": "amber", "lines": ["Binding: portfolio bad rate delta pp, stressed portfolio bad rate delta pp", "Counter-offer: approvals +3.76%, bad rate -0.152 pp (amber)", "We cannot reach 15% inside the risk appetite. Approving all 12 swap-in candidates with no swap-outs gives only 13.89% growth, and the bad-rate delta is 0.808 pp (1.052 pp stressed) against a 0.2 pp limit [R6]. The broadest lean set …"], "caption": "Asked for more than the appetite allows, it refuses, names the limit and makes a counter-offer.", "act": "act2", "ms": 16000}, {"kind": "screen", "screen": "end", "label": "CREDIT STRATEGY AGENT", "title": "Growth inside a locked risk appetite, with a person deciding.", "lines": ["Revised: fixed its own plan when approvals fell", "Rejected: a plan that passed every limit but could still raise the bad rate", "Refused: “Grow 15%”, with a counter-offer", "Stopped: for a person to approve the test"], "note": "Built by Jayaram Ranganathan · 20 years, 11+ in product  ·  personal prototype on public data · github.com/jayaramAI33/credit-strategy-agent", "caption": "Every number on screen came from deterministic code, not the language model.", "act": "act2", "ms": 12000}], "acts": {"act1": {"title": "Run 1: “Grow approvals 3-5% without raising the bad rate”", "model": "claude-opus-5-5", "elapsed_s": 79.2, "calls": 9, "cost": 0.188}, "act2": {"title": "Run 2: “Grow approvals 15%”", "model": "claude-opus-5-5", "elapsed_s": 112.9, "calls": 11, "cost": 0.276}}};
+let i = 0, timer = null, playing = true;
+const stage = document.getElementById('stage'), feed = document.getElementById('feed'), cap = document.getElementById('cap'), scr = document.getElementById('screen');
+function fit(){const s=Math.min(innerWidth/960, innerHeight/540);stage.style.zoom=s;}
+addEventListener('resize', fit); fit();
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function bandChip(b){return b?`<span class="band b-${b}">${b.toUpperCase()}</span>`:''}
+function setAct(a){const m=DATA.acts[a];document.getElementById('sub').textContent=`${m.title} · ${m.model} · real run ${m.elapsed_s} s, about $${m.cost} (slowed down for reading)`;}
+function setCap(st){cap.innerHTML=`<div class="c">${esc(st.caption)}</div><small>${esc(DATA.acts[st.act].title)}</small>`;}
+function drawChart(act){const pts=DATA.steps.slice(0,i).filter(s=>s.act===act).flatMap(s=>s.points||(s.point?[s.point]:[]));
+  const W=600,H=420,P=56;const xs=pts.flatMap(p=>[p.x,p.xs]).concat([0,0.25,-0.1]);const ys=pts.map(p=>p.y).concat([0,6]);
+  const x0=Math.min(...xs)-0.06,x1=Math.max(...xs)+0.06,y0=Math.min(...ys,0),y1=Math.max(...ys)*1.12+0.5;
+  const X=v=>P+(v-x0)/(x1-x0)*(W-P-14),Y=v=>H-P-(v-y0)/(y1-y0)*(H-P-14);
+  const col={green:'#15803d',amber:'#b45309',red:'#b42318'};
+  let s=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><rect x="${X(0.2)}" y="14" width="${Math.max(0,W-14-X(0.2))}" height="${H-P-14}" fill="#b4231814"/>`;
+  s+=`<line x1="${X(0.2)}" x2="${X(0.2)}" y1="14" y2="${H-P}" stroke="#b42318" stroke-width="2" stroke-dasharray="7 5"/><text x="${X(0.2)+6}" y="36" font-size="20" fill="#b42318">limit</text>`;
+  s+=`<line x1="${X(0)}" x2="${X(0)}" y1="14" y2="${H-P}" stroke="#9aa3ae" stroke-width="1.5"/><line x1="${P}" x2="${W-14}" y1="${Y(0)}" y2="${Y(0)}" stroke="#9aa3ae" stroke-width="1.5"/>`;
+  s+=`<circle cx="${X(0)}" cy="${Y(0)}" r="8" fill="#14171c"/><text x="${X(0)-12}" y="${Y(0)-12}" font-size="19" text-anchor="end">today</text>`;
+  pts.forEach(p=>{s+=`<line x1="${X(p.x)}" x2="${X(p.xs)}" y1="${Y(p.y)}" y2="${Y(p.y)}" stroke="${col[p.band]}" stroke-width="2.5" opacity=".6"/>`;
+    s+=`<circle cx="${X(p.xs)}" cy="${Y(p.y)}" r="8" fill="#fff" stroke="${col[p.band]}" stroke-width="3"/>`;
+    s+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="12" fill="${col[p.band]}"/><text x="${X(p.x)-12}" y="${Y(p.y)-18}" font-size="21" font-weight="700">${p.id}</text>`;});
+  const tick=(v,a)=>a==='x'?`<text x="${X(v)}" y="${H-P+26}" font-size="18" text-anchor="middle" fill="#5b6370">${v.toFixed(1)}</text>`:`<text x="${P-10}" y="${Y(v)+6}" font-size="18" text-anchor="end" fill="#5b6370">${v.toFixed(0)}%</text>`;
+  for(let v=Math.ceil(x0*5)/5;v<=x1;v+=0.2)s+=tick(v,'x');for(let v=Math.ceil(y0);v<=y1;v+=Math.max(1,Math.round((y1-y0)/5)))s+=tick(v,'y');
+  document.getElementById('svg').innerHTML=s+'</svg>';}
+function showScreen(st){scr.classList.add('on');document.querySelector('main').style.visibility='hidden';
+  const box=scr.querySelector('.box');box.classList.remove('show');
+  document.getElementById('slab').textContent=st.label;document.getElementById('stitle').textContent=st.title;
+  document.getElementById('slist').innerHTML=(st.lines||[]).map(l=>`<li>${esc(l)}</li>`).join('');
+  document.getElementById('snote').textContent=st.note||'';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>box.classList.add('show')));}
+function show(){if(i>=DATA.steps.length){stop();return;}
+  const st=DATA.steps[i];if(i===0||DATA.steps[i-1].act!==st.act){feed.innerHTML='';setAct(st.act);}
+  if(st.kind==='screen'){showScreen(st);}
+  else{scr.classList.remove('on');document.querySelector('main').style.visibility='visible';
+    const d=document.createElement('div');d.className=`card k-${st.kind}`;
+    d.innerHTML=`<div class="lab">${esc(st.label)}${bandChip(st.band)}</div>`+(st.title?`<div class="ttl">${esc(st.title)}</div>`:'')+
+      st.lines.filter(Boolean).map(l=>`<div class="ln">${esc(l)}</div>`).join('');
+    feed.appendChild(d);
+    const used=()=>[...feed.children].reduce((h,c)=>h+c.offsetHeight+9,-9);
+    while(feed.children.length>1&&used()>feed.clientHeight)feed.removeChild(feed.firstChild);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('show')));}
+  if(st.caption)setCap(st);
+  i++;drawChart(st.act);}
+function tick(){show();if(playing&&i<DATA.steps.length){const st=DATA.steps[i-1]||{};timer=setTimeout(tick,st.ms||4000);}else stop();}
+function stop(){playing=false;clearTimeout(timer);document.getElementById('play').textContent='Play';}
+document.getElementById('play').onclick=()=>{if(playing){stop();}else{playing=true;document.getElementById('play').textContent='Pause';tick();}};
+document.getElementById('next').onclick=()=>{stop();show();};
+document.getElementById('restart').onclick=()=>{stop();i=0;feed.innerHTML='';playing=true;document.getElementById('play').textContent='Pause';tick();};
+document.addEventListener('keydown',e=>{if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();document.getElementById('next').click();}});
+timer = setTimeout(tick, 1500);
+</script></body></html>

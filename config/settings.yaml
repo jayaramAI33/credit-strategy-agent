@@ -1,0 +1,28 @@
+# General settings. Paths are relative to the project root.
+paths:
+  raw_file: data/raw/accepted_2007_to_2018Q4.csv.gz
+  processed_file: data/processed/loans.parquet
+  phase1_out: outputs/phase1
+
+agent:
+  model: claude-opus-5-5   # change here to swap models
+  effort: medium           # low | medium | high | xhigh | max (Opus 5.5 default is medium)
+  max_tokens: 16000        # per response, includes thinking
+  max_api_calls: 40        # hard stop for one run
+  betas:
+    - server-side-fallback-2026-07-01   # fallbacks="default": re-run a safety-declined request on another model
+    - thinking-display-updates-2026-08-18  # display="updates": short notes between tool calls, for the audit log
+  pricing_per_mtok:        # USD, for the run's cost estimate only
+    input: 4.00
+    output: 20.00
+    cache_read: 0.20
+    cache_write: 5.00
+
+data:
+  term: "36 months"
+  issue_from: "2012-10-01"           # 2012Q4: first quarter with complete bureau fields
+  issue_to: "2015-12-31"             # (2012Q1-Q3 lack ~15 bureau fields; dropped 2026-10-22)
+  build_years: [2012, 2014]          # inclusive; everything after is out-of-time (OOT)
+  good_statuses: ["Fully Paid"]
+  bad_statuses: ["Charged Off", "Default"]
+  # Any other status (Current, Late, In Grace Period) = still open -> dropped

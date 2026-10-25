@@ -1,0 +1,29 @@
+# Data-prep parameters (stages C-E, fixed for v1). All computed on build years only.
+
+screening:                 # applied in this order; first failing rule is logged
+  max_missing_pct: 5       # rule 1: reject if missing >= 5%
+  cat_levels_min_exclusive: 5    # rule 2: categorical kept only if 5 < levels < 20
+  cat_levels_max_exclusive: 20
+  max_top_value_share_pct: 85    # rule 3: reject if one value covers > 85% of loans
+
+treatment:
+  numeric_missing: median        # all kept variables have < 5% missing
+  categorical_missing: "Missing" # becomes its own level
+  outlier_method: iqr            # cap at Q1 - k*IQR and Q3 + k*IQR
+  outlier_iqr_k: 3
+  outlier_fallback: [1, 99]      # percentiles, used when IQR = 0 (mostly-zero counts)
+
+binning:
+  initial_bins: 10               # equal-frequency start
+  max_bins: 5
+  min_bin_share_pct: 5
+  min_bin_bads: 50
+  monotonic: true                # numeric variables only
+  cat_small_level_share_pct: 5   # smaller levels merged into "Other"
+
+selection:
+  top_n: 5
+  min_iv: 0.02                   # build and OOT
+  max_psi: 0.25                  # build vs OOT population stability
+  max_abs_corr: 0.6              # correlation cap between selected features (WoE scale)
+  exclude_policy_variables: true

@@ -1,0 +1,18 @@
+# Secrets
+.env
+
+# Data (public dataset, re-downloadable from Kaggle; too large for git)
+data/raw/
+data/processed/
+
+# Generated outputs (final assets are copied to assets/ when ready)
+outputs/
+
+# Local tool config
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
