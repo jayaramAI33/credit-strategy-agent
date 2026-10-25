@@ -85,16 +85,18 @@ Next round: blind goals written by someone else, repeat runs per goal, and the o
 
 ### The credit-strategy process (stages A–H)
 
-| Stage | Here |
-|---|---|
-| A. Dataset, vintages, benchmark | `prep.py`: quarterly vintages, build vs out-of-time |
-| B. Variable roles | `fields.yaml`: primary key, dependent, segment ID, vintage ID, policy axis; formula variable deferred |
-| C. Screening | Missing < 5%; categorical levels 6–19; reject if one value covers > 85% of loans → 45 variables kept |
-| D. Treatment | Median fill; outliers capped at 3 × IQR (1st–99th percentile when IQR = 0) |
-| E. Features | Loan ÷ income, credit history length, FICO mid-point |
-| F. Policy parameters | `config/risk_appetite.yaml` (read-only) |
-| G. Policy build | Model-less: IV-ranked monotonic bins; top 5 with a correlation cap; segments = policy group × up to 2 bin conditions, found on build and confirmed on 2015 |
-| H. Impact | Swap-set simulation: Δ approvals, Δ bad rate with a bootstrap 95% CI, stress test, volumes, limits, band |
+| Stage | Here | Run by |
+|---|---|---|
+| A. Dataset, vintages, benchmark | `prep.py`: quarterly vintages, build vs out-of-time | Python, author's fixed choices |
+| B. Variable roles | `fields.yaml`: primary key, dependent, segment ID, vintage ID, policy axis; formula variable deferred | Python config, author's fixed choices |
+| C. Screening | Missing < 5%; categorical levels 6–19; reject if one value covers > 85% of loans → 45 variables kept | Python, author's fixed choices |
+| D. Treatment | Median fill; outliers capped at 3 × IQR (1st–99th percentile when IQR = 0) | Python, author's fixed choices |
+| E. Features | Loan ÷ income, credit history length, FICO mid-point | Python, author's fixed choices |
+| F. Policy parameters | `config/risk_appetite.yaml` (read-only) | Read-only config: the agent reads it and can't change it |
+| G. Policy build | Model-less: IV-ranked monotonic bins; top 5 with a correlation cap; segments = policy group × up to 2 bin conditions, found on build and confirmed on 2015 | Python builds the segment catalogue; the agent chooses segments from it |
+| H. Impact | Swap-set simulation: Δ approvals, Δ bad rate with a bootstrap 95% CI, stress test, volumes, limits, band | The agent runs simulations through a Python tool and decides |
+
+The agent works the decision stages. Python runs the data stages and every calculation. Giving the agent judgment in stages A–E is future work.
 
 **No statistical model.** The current policy is a readable rule set: decline if DTI > 35 or loan ÷ income > 0.40; approve grades A–B; grade C needs FICO ≥ 677; grade D needs FICO ≥ 697; decline E–G. It approves 71.07% of 2015 applications at an 11.27% approved bad rate.
 
