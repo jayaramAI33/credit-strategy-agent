@@ -2,6 +2,8 @@
 
 **An AI agent that finds approval growth in a credit portfolio, pays for it by cutting the riskiest approvals, stays inside a risk appetite it cannot change, proposes a small test instead of a rollout, and stops for a human to approve.**
 
+**▶ [Watch a 3½-minute replay of two real runs](https://jayaramai33.github.io/credit-strategy-agent/results/demo_replay.html)**
+
 > **Personal prototype on public data.** Built on the Kaggle "All Lending Club loan data" (US marketplace loans, 2012–2015). It contains no employer data, code or design. The absolute loss levels in this data are not comparable to any real lender's, so **only changes relative to the current policy are meaningful**. The risk appetite values are illustrative.
 
 ---
@@ -39,7 +41,7 @@ flowchart LR
 | "Grow approvals 3-5% without raising the bad rate" | **Submitted, green** → credit manager | First plan *shrank* approvals by 1.0%, so the agent revised twice. It chose **+3.38% approvals, bad rate −0.075 pp** (95% CI −0.118 to −0.034), stress test +0.042 pp, turnover 8.7%. It rejected a +4.28% option because that option's interval reached above zero | 79 s | $0.19 |
 | "Grow approvals 15%" | **Refused**, named the binding limits | Even all 12 swap-ins give only +13.89%, and they breach both bad-rate limits. Counter-offer: **+3.76%** (amber) or +3.49% (green). An exhaustive search finds up to +5.99%, so the agent finds a valid counter-offer, not the best one | 113 s | $0.28 |
 
-The first run's proposal was then approved by a person through `scripts/approve.py`. Only its three test cells were added to `config/strategy.yaml`; the current policy is unchanged. Watch both runs in [results/demo_replay.html](results/demo_replay.html): download it and open it in a browser. It is self-contained, plays automatically with captions, and space or → steps through it.
+The first run's proposal was then approved by a person through `scripts/approve.py`. Only its three test cells were added to `config/strategy.yaml`; the current policy is unchanged. Watch both runs in the [live replay](https://jayaramai33.github.io/credit-strategy-agent/results/demo_replay.html). It plays automatically with captions, and space or → steps through it. The same page is in `results/demo_replay.html` if you want to open it offline.
 
 ### Evaluation: 10 goals (phase 4)
 
